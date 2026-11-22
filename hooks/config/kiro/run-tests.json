@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Python 저장 시 특성 테스트",
+      "trigger": "PostFileSave",
+      "matcher": "\\.py$",
+      "action": { "type": "command", "command": "hooks/run_tests.sh" }
+    }
+  ]
+}

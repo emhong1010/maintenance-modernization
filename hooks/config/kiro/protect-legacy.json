@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "legacy 폴더 보호 (파일 쓰기)",
+      "trigger": "PreToolUse",
+      "matcher": "write",
+      "action": { "type": "command", "command": "python3 hooks/protect_legacy.py" }
+    },
+    {
+      "name": "legacy 폴더 보호 (셸 명령)",
+      "trigger": "PreToolUse",
+      "matcher": "shell",
+      "action": { "type": "command", "command": "python3 hooks/protect_legacy.py" }
+    }
+  ]
+}

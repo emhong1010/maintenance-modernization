@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# 실습 환경 준비: 가상환경 + pytest 설치 → 샘플 DB 생성 → 특성 테스트 실행
+set -e
+cd "$(dirname "$0")"
+
+PY="${PYTHON:-python3.13}"
+command -v "$PY" >/dev/null 2>&1 || PY=python3
+
+echo "▶ 1/3 가상환경 만들기 ($PY)"
+"$PY" -m venv .venv
+.venv/bin/pip install -q --disable-pip-version-check pytest
+
+echo "▶ 2/3 샘플 DB 만들기"
+.venv/bin/python data/seed.py
+
+echo "▶ 3/3 특성 테스트 실행"
+.venv/bin/pytest -q
+
+echo ""
+echo "🎉 준비 완료! 레거시 프로그램 실행해 보기:"
+echo "   .venv/bin/python legacy/maintenance.py history 12가3456"
