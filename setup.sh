@@ -16,6 +16,8 @@ echo "▶ 2/3 샘플 DB 만들기"
 echo "▶ 3/3 특성 테스트 실행"
 .venv/bin/pytest -q
 
+touch hooks/hook.log   # Hook 실행 기록 (tail -f hooks/hook.log 로 확인)
+
 echo ""
 echo "🎉 준비 완료! 레거시 프로그램 실행해 보기:"
 echo "   .venv/bin/python legacy/maintenance.py history 12가3456"
