@@ -8,8 +8,12 @@
 ※ 교육용 예시다. 모든 우회 경로를 막는 완벽한 보안 장치는 아니다.
 """
 import json
+import pathlib
 import re
 import sys
+from datetime import datetime
+
+LOG = pathlib.Path(__file__).resolve().parent / "hook.log"
 
 PATH_KEYS = ("file_path", "path", "filePath", "notebook_path", "target_file")
 
@@ -24,6 +28,17 @@ MESSAGE = (
     "🚫 [Hook] legacy/ 폴더는 수정할 수 없습니다 (원본 보존 규칙).\n"
     "   변경은 app/ 폴더에서 하고, legacy/ 는 동작 비교용으로만 읽으세요."
 )
+
+
+def log(event: dict, text: str) -> None:
+    """hooks/hook.log 에 한 줄 기록한다 (tail -f 로 실시간 확인용)."""
+    try:
+        name = event.get("hook_event_name") or "PreToolUse"
+        tool = event.get("tool_name") or "?"
+        with LOG.open("a", encoding="utf-8") as f:
+            f.write(f"{datetime.now():%H:%M:%S} [{name}] {text} ({tool})\n")
+    except Exception:
+        pass
 
 
 def touches_legacy_path(value: str) -> bool:
@@ -52,15 +67,21 @@ def main() -> int:
 
     tool_input = event.get("tool_input") or {}
 
-    if any(touches_legacy_path(p) for p in collect_paths(tool_input)):
+    paths = list(collect_paths(tool_input))
+    blocked = [p for p in paths if touches_legacy_path(p)]
+    if blocked:
+        log(event, f"🚫 차단: {blocked[0]}")
         print(MESSAGE, file=sys.stderr)
         return 2
 
     command = tool_input.get("command") if isinstance(tool_input, dict) else None
     if isinstance(command, str) and any(re.search(p, command) for p in SHELL_WRITE):
+        log(event, f"🚫 차단: {command[:60]}")
         print(MESSAGE, file=sys.stderr)
         return 2
 
+    if paths:
+        log(event, f"✔️  허용: {paths[0]}")
     return 0
 
 
