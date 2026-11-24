@@ -10,61 +10,50 @@ def _db_path() -> str:
     return os.environ.get("MAINT_DB", "data/maintenance.db")
 
 
-def _recall_period(conn: sqlite3.Connection, code: str):
-    """리콜 코드의 대상 차종과 생산 기간을 돌려준다. 없으면 None."""
-    return conn.execute(
-        f"SELECT model, prod_from, prod_to FROM recalls WHERE code = '{code}'"
-    ).fetchone()
+def _recall_vehicles(code: str) -> list[tuple[str, bool]] | None:
+    """리콜 대상 차량과 조치 여부를 한 번의 쿼리로 돌려준다. 없는 리콜 코드면 None.
+
+    대상: 리콜 차종이면서 생산일이 기간 안(시작일·종료일 포함)인 차량.
+    조치 여부: 작업 내용에 리콜 코드가 들어 있는 정비 기록이 있으면 조치 완료.
+    """
+    with closing(sqlite3.connect(_db_path())) as conn:
+        period = conn.execute(
+            "SELECT model, prod_from, prod_to FROM recalls WHERE code = ?", (code,)
+        ).fetchone()
+        if period is None:
+            return None
+        rows = conn.execute(
+            "SELECT v.plate, EXISTS ("
+            "  SELECT 1 FROM records r WHERE r.plate = v.plate AND r.work LIKE ?"
+            ") FROM vehicles v WHERE v.model = ? AND v.prod_date BETWEEN ? AND ?",
+            (f"%{code}%", *period),
+        ).fetchall()
+    return [(plate, bool(fixed)) for plate, fixed in rows]
 
 
 def find_recall_targets(code: str) -> list[str]:
-    """리콜 조치가 아직 안 된 차량번호를 정렬해서 돌려준다."""
-    try:
-        with closing(sqlite3.connect(_db_path())) as conn:
-            period = _recall_period(conn, code)
-            if period is None:
-                return []
-            model, prod_from, prod_to = period
-            rows = conn.execute(
-                "SELECT plate, owner_name, owner_phone FROM vehicles "
-                "WHERE model = ? AND prod_date BETWEEN ? AND ?",
-                (model, prod_from, prod_to),
-            ).fetchall()
-            targets = []
-            for plate, name, phone in rows:
-                fixed = conn.execute(
-                    "SELECT COUNT(*) FROM records WHERE plate = ? AND work LIKE ?",
-                    (plate, f"%{code}%"),
-                ).fetchone()[0]
-                if fixed == 0:
-                    print(f"[리콜 대상] {plate} {name} {phone}")
-                    targets.append(plate)
-            return sorted(targets)
-    except:
+    """리콜 조치가 아직 안 된 차량번호를 정렬해서 돌려준다. 없는 리콜 코드면 빈 리스트."""
+    vehicles = _recall_vehicles(code)
+    if vehicles is None:
         return []
+    return sorted(plate for plate, fixed in vehicles if not fixed)
 
 
-def recall_status(code):
-    conn = sqlite3.connect(_db_path())
-    period = _recall_period(conn, code)
-    if period is None:
+def recall_status(code: str) -> dict | None:
+    """리콜 진행 현황(전체·조치·남은 대수, 조치율)을 돌려준다. 없는 리콜 코드면 None.
+
+    조치율은 반올림하지 않고 버린다 (2/3 → 66).
+    """
+    vehicles = _recall_vehicles(code)
+    if vehicles is None:
         return None
-    model, prod_from, prod_to = period
-    plates = [
-        r[0]
-        for r in conn.execute(
-            "SELECT plate FROM vehicles WHERE model = ? AND prod_date BETWEEN ? AND ?",
-            (model, prod_from, prod_to),
-        )
-    ]
-    done = 0
-    for plate in plates:
-        n = conn.execute(
-            "SELECT COUNT(*) FROM records WHERE plate = ? AND work LIKE ?",
-            (plate, f"%{code}%"),
-        ).fetchone()[0]
-        if n > 0:
-            done += 1
-    total = len(plates)
+    total = len(vehicles)
+    done = sum(1 for _, fixed in vehicles if fixed)
     rate = int(done * 100 / total) if total else 0
-    return {"code": code, "total": total, "done": done, "remaining": total - done, "rate": rate}
+    return {
+        "code": code,
+        "total": total,
+        "done": done,
+        "remaining": total - done,
+        "rate": rate,
+    }

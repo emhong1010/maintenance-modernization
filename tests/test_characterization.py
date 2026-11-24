@@ -104,3 +104,15 @@ def test_monthly_report_empty_month():
     assert app.monthly_report(2022, 1) == {
         "month": "2022-01", "count": 0, "total": 0, "avg": 0, "top_work": None,
     }
+
+
+def test_monthly_report_top_work_tie_keeps_first():
+    """가장 많은 작업이 동률이면 먼저 등록된 작업을 고른다."""
+    app.add_record("12가3456", "2022-01-05", 50000, "와이퍼 교체", 20000)
+    app.add_record("12가3456", "2022-01-20", 50500, "에어컨 필터 교체", 30000)
+    assert app.monthly_report(2022, 1)["top_work"] == "와이퍼 교체"
+
+
+def test_recall_targets_sql_input_is_treated_as_plain_code():
+    """리콜 코드에 SQL 조각을 넣어도 없는 코드로 처리해 빈 리스트를 돌려준다."""
+    assert app.find_recall_targets("x' OR '1'='1") == []
