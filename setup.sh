@@ -8,7 +8,7 @@ command -v "$PY" >/dev/null 2>&1 || PY=python3
 
 echo "▶ 1/3 가상환경 만들기 + pytest · mcp 설치 ($PY)"
 "$PY" -m venv .venv
-# pytest: 특성 테스트 / mcp<2: Lab 4 MCP 서버 구축용 (mcp 2.x는 FastMCP → MCPServer로 API가 바뀜)
+# pytest: 특성 테스트 / mcp<2: Lab 5 MCP 서버 구축용 (mcp 2.x는 FastMCP → MCPServer로 API가 바뀜)
 .venv/bin/pip install -q --disable-pip-version-check pytest "mcp<2"
 
 echo "▶ 2/3 샘플 DB 만들기"

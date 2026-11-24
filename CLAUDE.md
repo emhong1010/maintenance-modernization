@@ -21,13 +21,13 @@
 - `legacy/maintenance.py` — 원본 프로그램 (CLI + 함수 5개)
 - `app/` — 현대화 대상 패키지 (`app/__init__.py`가 공개 함수 목록)
 - `data/seed.py` — 샘플 DB 스키마와 데이터 (vehicles, records, recalls)
-- `tests/test_characterization.py` — 기존 동작을 고정한 특성 테스트 15개 (매 테스트마다 임시 DB 사용)
+- `tests/test_characterization.py` — 기존 동작을 고정한 특성 테스트 17개 (매 테스트마다 임시 DB 사용)
 - `hooks/` — 실습용 Hook 스크립트
 
 ## 팀 규칙 (반드시 지킬 것)
 
 - `legacy/` 폴더는 절대 수정하지 않는다. 동작 비교용 원본이다.
-- 특성 테스트(tests/test_characterization.py) 15개는 항상 통과해야 한다. 테스트를 고쳐서 통과시키지 않는다.
+- 특성 테스트(tests/test_characterization.py) 17개는 항상 통과해야 한다. 테스트를 고쳐서 통과시키지 않는다.
 - SQL은 반드시 파라미터 바인딩(`?`)을 쓴다.
 - 고객 이름·전화번호 같은 개인정보는 print나 로그에 남기지 않는다.
 - DB 경로는 환경 변수 `MAINT_DB`에서 읽는다 (기본값 `data/maintenance.db`).
