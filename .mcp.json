@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "maint-tools": {
+      "type": "stdio",
+      "command": ".venv/bin/python",
+      "args": ["maint_server.py"],
+      "env": {}
+    }
+  }
+}
