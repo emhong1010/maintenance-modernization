@@ -1,8 +1,27 @@
 {
-  "enabledMcpjsonServers": [
-    "aws-knowledge",
-    "maint-db",
-    "strands",
-    "maint-tools"
-  ]
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/protect_legacy.py\"" }
+        ]
+      },
+      {
+        "matcher": "mcp__maint-db__write_query",
+        "hooks": [
+          { "type": "command", "command": "echo '🚫 [Hook] 정비 DB는 조회만 할 수 있습니다. 다른 방법으로 우회하지 말고 사용자에게 알리세요.' >&2; exit 2" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR/hooks/format.sh\"" },
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR/hooks/run_tests.sh\"" }
+        ]
+      }
+    ]
+  }
 }
